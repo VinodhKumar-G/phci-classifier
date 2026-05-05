@@ -49,8 +49,8 @@ def extract_features(w: np.ndarray) -> dict:
     f["energy"]     = float(np.sum(w**2))
     # Frequency-domain
     freqs, psd = welch(w, fs=FS, nperseg=min(64, len(w)))
-    bp = lambda lo, hi: float(np.trapz(psd[(freqs>=lo)&(freqs<hi)],
-                                        freqs[(freqs>=lo)&(freqs<hi)]))
+    bp = lambda lo, hi: float(np.trapezoid(psd[(freqs>=lo)&(freqs<hi)],
+                                           freqs[(freqs>=lo)&(freqs<hi)]))
     f["pwr_dc"]       = bp(0.0, 0.1)
     f["pwr_low"]      = bp(0.1, 1.0)
     f["pwr_mid"]      = bp(1.0, 5.0)
@@ -102,18 +102,23 @@ def process_file(csv_path: Path) -> list:
 
 if __name__ == "__main__":
     raw_dir = Path(cfg["paths"]["synthetic_raw"])
+    processed_dir = Path(cfg["paths"]["processed"])
+    models_dir = Path(cfg["paths"]["models"])
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    models_dir.mkdir(parents=True, exist_ok=True)
+
     all_rows = []
     for f in sorted(raw_dir.glob("*.csv")):
         print(f"Processing {f.name}...")
         all_rows.extend(process_file(f))
     master = pd.DataFrame(all_rows)
-    out = Path(cfg["paths"]["processed"]) / "master_features.csv"
+    out = processed_dir / "master_features.csv"
     master.to_csv(out, index=False)
     print(f"Feature matrix: {master.shape} -> {out}")
     # Fit and save scaler on feature columns only
     feat_cols = FEATURE_NAMES
     scaler = StandardScaler()
     master[feat_cols] = scaler.fit_transform(master[feat_cols])
-    master.to_csv(Path(cfg["paths"]["processed"]) / "master_features_scaled.csv", index=False)
-    joblib.dump(scaler, Path(cfg["paths"]["models"]) / "scaler.pkl")
+    master.to_csv(processed_dir / "master_features_scaled.csv", index=False)
+    joblib.dump(scaler, models_dir / "scaler.pkl")
     print("Scaler saved to models/scaler.pkl")
