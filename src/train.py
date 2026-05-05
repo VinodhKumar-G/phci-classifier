@@ -13,7 +13,6 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.metrics import classification_report, accuracy_score
 from collections import Counter
-from imblearn.over_sampling import SMOTE
 import json
 from datetime import datetime
 
@@ -38,14 +37,9 @@ def train_stage1(df: pd.DataFrame) -> tuple:
     X = df[FEAT_COLS].values
     y = df["species_label"].values
 
-    # Apply SMOTE if any class has < 70% of majority class count
+    # Log class distribution (imbalance handled via class_weight='balanced')
     counts = Counter(y)
-    majority = max(counts.values())
-    if min(counts.values()) < 0.7 * majority:
-        print(f"Class imbalance detected: {counts}. Applying SMOTE.")
-        sm = SMOTE(random_state=SEED, k_neighbors=5)
-        X, y = sm.fit_resample(X, y)
-        print(f"Post-SMOTE distribution: {Counter(y)}")
+    print(f"Class distribution: {counts}")
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=cfg["training"]["test_size"],
@@ -87,12 +81,9 @@ def train_stage2(df: pd.DataFrame) -> tuple:
         X = sp_df[FEAT_COLS].values
         y = sp_df["stress_label"].values
 
-        # SMOTE per species
+        # Log class distribution (imbalance handled via class_weight='balanced')
         counts = Counter(y)
-        majority = max(counts.values())
-        if min(counts.values()) < 0.7 * majority:
-            sm = SMOTE(random_state=SEED, k_neighbors=min(5, min(counts.values())-1))
-            X, y = sm.fit_resample(X, y)
+        print(f"  {sp} class distribution: {counts}")
 
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=cfg["training"]["test_size"],

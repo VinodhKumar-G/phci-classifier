@@ -13,7 +13,7 @@ import yaml, warnings
 warnings.filterwarnings('ignore', category=FutureWarning, module='pandas')
 
 cfg = yaml.safe_load(open('config/config.yaml'))
-FS  = cfg['signal']['sampling_rate_hz']   # 8.6 Hz
+FS  = cfg['signal']['sample_rate_hz']   # 8.6 Hz
 
 FEATURE_NAMES = [
     'mean','std','rms','p2p','skewness','kurtosis',
@@ -39,8 +39,11 @@ def extract(window: np.ndarray) -> np.ndarray:
     f['std']             = float(np.std(w, ddof=1))
     f['rms']             = float(np.sqrt(np.mean(w**2)))
     f['p2p']             = float(w.max() - w.min())
-    f['skewness']        = float(skew(w))
-    f['kurtosis']        = float(kurtosis(w))
+    # skew/kurtosis return NaN if variance=0; replace with 0.0
+    sk = skew(w)
+    ku = kurtosis(w)
+    f['skewness']        = float(sk) if not np.isnan(sk) else 0.0
+    f['kurtosis']        = float(ku) if not np.isnan(ku) else 0.0
     f['zero_cross_rate'] = float(np.sum(np.diff(np.sign(w)) != 0) / (len(w) / FS))
     f['mean_abs_slope']  = float(np.mean(np.abs(diffs) * FS))
     f['max_slope']       = float(np.max(np.abs(diffs) * FS))
@@ -87,14 +90,19 @@ def extract(window: np.ndarray) -> np.ndarray:
     def lag_autocorr(sig: np.ndarray, lag_sec: float) -> float:
         lag = int(lag_sec * FS)
         if lag >= len(sig): return 0.0
-        return float(np.corrcoef(sig[:-lag], sig[lag:])[0, 1])
+        # Handle constant signals (std=0) to avoid NaN
+        if np.std(sig) < 1e-12: return 1.0
+        corr = np.corrcoef(sig[:-lag], sig[lag:])[0, 1]
+        return float(corr) if not np.isnan(corr) else 0.0
 
     f['autocorr_1s']    = lag_autocorr(w, 1)
     f['autocorr_5s']    = lag_autocorr(w, 5)
     f['autocorr_15s']   = lag_autocorr(w, 15)
     try:
-        f['approx_entropy']  = float(ant.app_entropy(w, order=2))
-        f['sample_entropy']  = float(ant.sample_entropy(w, order=2))
+        ae = float(ant.app_entropy(w, order=2))
+        se = float(ant.sample_entropy(w, order=2))
+        f['approx_entropy']  = ae if not np.isnan(ae) else 0.0
+        f['sample_entropy']  = se if not np.isnan(se) else 0.0
     except Exception:
         f['approx_entropy']  = 0.0
         f['sample_entropy']  = 0.0

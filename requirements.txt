@@ -19,12 +19,9 @@ scipy==1.15.3
 
 # ─── Machine Learning ─────────────────────────────────────────────────
 scikit-learn==1.7.2
-# Compatible with numpy 2.x and imbalanced-learn 0.13+
+# Compatible with numpy 2.x
 # RandomForestClassifier, StandardScaler, train_test_split — stable API
-
-imbalanced-learn==0.13.0
-# SMOTE compatible with scikit-learn 1.7.x
-# 0.14.x requires scikit-learn 1.6+ — OK with 1.7.2
+# class_weight='balanced' handles imbalanced data natively (no SMOTE needed)
 
 joblib==1.5.3
 # Model persistence: joblib.dump / joblib.load
