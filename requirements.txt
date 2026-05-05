@@ -1,0 +1,80 @@
+# requirements.txt
+# TESTED: Python 3.12.3 | Generated: May 2026
+# All versions validated for mutual compatibility in GitHub Codespaces
+
+# ─── Core scientific stack ────────────────────────────────────────────
+numpy==2.2.6
+# PINNED to 2.2.6 (LTS branch of numpy 2.x)
+# numpy 2.3+ has additional deprecation warnings in scipy integration
+# numpy 1.x: DO NOT USE — np.trapz and aliases removed in 2.x
+
+pandas==2.2.3
+# PINNED to 2.2.3 LTS — pandas 3.x removes DataFrame.append()
+# and changes copy-on-write semantics. Use pd.concat() everywhere.
+# pandas 3.x: compatible but requires code changes (see Section 4)
+
+scipy==1.15.3
+# scipy.integrate.trapezoid replaces np.trapz (removed in numpy 2.x)
+# scipy.signal: welch, find_peaks — unchanged API across 1.11-1.15
+
+# ─── Machine Learning ─────────────────────────────────────────────────
+scikit-learn==1.7.2
+# Compatible with numpy 2.x and imbalanced-learn 0.13+
+# RandomForestClassifier, StandardScaler, train_test_split — stable API
+
+imbalanced-learn==0.13.0
+# SMOTE compatible with scikit-learn 1.7.x
+# 0.14.x requires scikit-learn 1.6+ — OK with 1.7.2
+
+joblib==1.5.3
+# Model persistence: joblib.dump / joblib.load
+# Used instead of pickle for numpy array efficiency in RF models
+
+# ─── Signal Processing & Entropy ──────────────────────────────────────
+antropy==0.2.2
+# app_entropy(x, order=2) and sample_entropy(x, order=2) — API stable
+# 0.1.x had different function names — use 0.2.x only
+
+# ─── Visualization ────────────────────────────────────────────────────
+matplotlib==3.9.4
+# MUST set backend to Agg in code: matplotlib.use('Agg')
+# OR set env var MPLBACKEND=Agg (done in devcontainer.json)
+# matplotlib 3.10+ changes default rcParams — pinned to 3.9.x for stability
+
+seaborn==0.13.2
+# Compatible with matplotlib 3.9.x and pandas 2.2.x
+# heatmap(), boxplot(), lineplot() — unchanged API
+
+# ─── Configuration & Utilities ────────────────────────────────────────
+pyyaml==6.0.2
+# yaml.safe_load() — unchanged API. 6.0.2 patches CVE-2017-18342
+
+tqdm==4.67.3
+# Progress bars for feature extraction loops
+
+python-dotenv==1.1.0
+# Load .env files — used for API keys (THINGSPEAK_API_KEY, MQTT_BROKER)
+
+# ─── Serial Communication (Hardware) ──────────────────────────────────
+pyserial==3.5
+# PINNED: 3.5 is the latest stable release (no version 4.x exists)
+# serial.Serial, serial.tools.list_ports — unchanged API
+# In Codespaces: use virtual pty ports for testing without hardware
+# With real hardware: requires USB device forwarding (see Section 8)
+
+# ─── IoT & Dashboard ──────────────────────────────────────────────────
+paho-mqtt==2.1.0
+# BREAKING: paho-mqtt 2.x changes callback signatures vs 1.x
+# on_connect must have 5 args: (client, userdata, flags, reason_code, properties)
+# on_publish must have 5 args: (client, userdata, mid, reason_code, properties)
+# Client() must pass: callback_api_version=CallbackAPIVersion.VERSION2
+# See Section 5 for corrected mqtt_client.py
+
+requests==2.32.3
+# HTTP requests to ThingSpeak API
+# urllib3 2.x compatible
+
+# ─── Testing ──────────────────────────────────────────────────────────
+pytest==8.3.5
+# test discovery: pytest tests/
+# Compatible with Python 3.12

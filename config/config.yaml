@@ -1,0 +1,50 @@
+# config/config.yaml
+# ALL hyperparameters, paths, and constants in one place.
+# Steps 2-5 import from here. Real data steps (6-20) only change data paths.
+
+project:
+  seed: 42                    # Global random seed for reproducibility
+  species: [mimosa, tomato, aloe]
+  stress_states: [healthy, water_stress, heat_stress, wound_response]
+
+signal:
+  sample_rate_hz: 8.6         # Matches ADS1115 at 860SPS / 100 downsampling
+  window_size_samples: 258    # 30 seconds at 8.6 Hz
+  hop_size_samples: 129       # 50% overlap
+  n_features: 32              # Features extracted per window
+
+synthetic:
+  sessions_per_class: 6       # 6 recording sessions per species-stress combination
+  session_duration_min: 45    # 45 minutes per session
+  noise_std: 0.3              # Gaussian noise added to synthetic signals
+
+stage1:                       # Species classifier (Random Forest)
+  n_estimators: 200
+  max_depth: 15
+  min_samples_leaf: 5
+  max_features: sqrt
+  class_weight: balanced
+
+stage2:                       # Stress classifier (SVM per species)
+  kernel: rbf
+  C: 10.0
+  gamma: scale
+  class_weight: balanced
+  probability: true           # Needed for confidence score output
+
+training:
+  test_size: 0.20
+  val_size: 0.10
+  stratify: true
+
+thresholds:
+  species_confidence_min: 0.70   # Below this: Stage 2 not triggered
+  stress_confidence_min: 0.60    # Below this: uncertain alert issued
+
+paths:
+  synthetic_raw:  data/synthetic/raw/
+  real_raw:       data/real/raw/
+  processed:      data/processed/
+  models:         models/
+  figures:        outputs/figures/
+  reports:        outputs/reports/

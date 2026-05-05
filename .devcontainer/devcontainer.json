@@ -1,0 +1,32 @@
+{
+  "name": "PHCI Plant Signal Classifier",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt",
+  "forwardPorts": [8888, 1883],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python", "ms-python.black-formatter",
+        "ms-toolsai.jupyter", "ms-python.pylint",
+        "redhat.vscode-yaml", "ms-vscode.serial-monitor"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "editor.formatOnSave": true,
+        "[python]": { "editor.defaultFormatter": "ms-python.black-formatter" }
+      }
+    }
+  },
+  "remoteEnv": {
+    "PYTHONPATH":              "/workspaces/plant-signal-classifier/src",
+    "MPLBACKEND":              "Agg",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUNBUFFERED":        "1",
+    "PHCI_ENV":                "codespaces"
+  }
+}
