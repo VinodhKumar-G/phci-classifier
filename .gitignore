@@ -1,0 +1,11 @@
+# .gitignore — ensure secrets never get committed
+.env
+__pycache__/
+*.pyc
+*.pkl
+*.h5
+models/
+data/real/
+outputs/
+.pytest_cache/
+*.log
