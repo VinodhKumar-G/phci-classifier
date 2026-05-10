@@ -8,6 +8,8 @@ Must be run and all criteria passed before Step 6 (hardware) begins.
 import numpy as np
 import pandas as pd
 import yaml, json
+import matplotlib
+matplotlib.use('Agg')  
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
@@ -24,6 +26,7 @@ STRESSES = cfg["project"]["stress_states"]
 FIG_DIR  = Path(cfg["paths"]["figures"])
 REP_DIR  = Path(cfg["paths"]["reports"])
 FIG_DIR.mkdir(parents=True, exist_ok=True)
+REP_DIR.mkdir(parents=True, exist_ok=True)
 
 def load_test_set():
     df = pd.read_csv(Path(cfg["paths"]["processed"]) / "master_features_scaled.csv")

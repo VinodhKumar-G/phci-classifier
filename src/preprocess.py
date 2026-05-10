@@ -30,7 +30,7 @@ FEATURE_NAMES = [
     "ac_1s","ac_5s","ac_15s","apen","sampen","hurst"
 ]
 
-def extract_features(w: np.ndarray) -> dict:
+def extract_features(w: np.ndarray) -> np.ndarray:
     w = w.astype(np.float64)
     f = {}
     diffs = np.diff(w)
@@ -39,8 +39,8 @@ def extract_features(w: np.ndarray) -> dict:
     f["std"]        = np.std(w, ddof=1)
     f["rms"]        = np.sqrt(np.mean(w**2))
     f["p2p"]        = w.max() - w.min()
-    f["skewness"]   = float(skew(w))
-    f["kurtosis"]   = float(kurtosis(w))
+    sk = skew(w);     f["skewness"] = float(sk)     if not np.isnan(sk) else 0.0
+    ku = kurtosis(w); f["kurtosis"] = float(ku)     if not np.isnan(ku) else 0.0
     f["zcr"]        = np.sum(np.diff(np.sign(w)) != 0) / (len(w) / FS)
     f["mean_slope"] = np.mean(np.abs(diffs) * FS)
     f["max_slope"]  = np.max(np.abs(diffs) * FS)
@@ -73,17 +73,23 @@ def extract_features(w: np.ndarray) -> dict:
     fall = [valleys[i+1]-peaks[i] for i in range(min(len(valleys)-1,len(peaks)))]
     f["fall_time"]   = float(np.mean(fall)/FS*1000) if fall else 0.0
     # Statistical
-    lag = lambda s,l: float(np.corrcoef(s[:-l],s[l:])[0,1]) if l<len(s) else 0.0
+    def lag(s, l):
+        if l >= len(s) or np.std(s) < 1e-12: return 0.0
+        c = np.corrcoef(s[:-l], s[l:])[0, 1]
+        return float(c) if not np.isnan(c) else 0.0
     f["ac_1s"]  = lag(w, int(1*FS))
     f["ac_5s"]  = lag(w, int(5*FS))
     f["ac_15s"] = lag(w, int(min(15*FS, len(w)-1)))
-    f["apen"]   = float(ant.app_entropy(w, order=2))
-    f["sampen"] = float(ant.sample_entropy(w, order=2))
+    ae = ant.app_entropy(w, order=2);    f["apen"]   = float(ae) if not np.isnan(ae) else 0.0
+    se = ant.sample_entropy(w, order=2); f["sampen"] = float(se) if not np.isnan(se) else 0.0
     n = len(w); dev = np.cumsum(w-np.mean(w))
     R = dev.max()-dev.min(); S = np.std(w,ddof=1)
     f["hurst"]  = float(np.log(R/S)/np.log(n)) if S>0 else 0.5
     assert len(f) == N_F, f"Feature count mismatch: {len(f)} != {N_F}"
-    return f
+     # After building the result array, before returning:
+    result = np.array([f[name] for name in FEATURE_NAMES], dtype=np.float64)
+    result = np.where(np.isfinite(result), result, 0.0)  # catches any remaining NaN/Inf
+    return result
 
 def process_file(csv_path: Path) -> list:
     df  = pd.read_csv(csv_path)
@@ -91,7 +97,8 @@ def process_file(csv_path: Path) -> list:
     rows = []
     for start in range(0, len(sig)-WS, HOP):
         w    = sig[start:start+WS]
-        feat = extract_features(w)
+        feat_array = extract_features(w)
+        feat = dict(zip(FEATURE_NAMES, feat_array))
         feat["species"]      = df["species"].iloc[0]
         feat["stress_state"] = df["stress_state"].iloc[0]
         feat["species_label"]= df["species_label"].iloc[0]
